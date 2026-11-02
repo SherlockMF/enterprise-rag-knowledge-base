@@ -63,7 +63,7 @@ export function SiteNav() {
                   "flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium transition-smooth focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-foreground/50",
                   active
                     ? "bg-primary-foreground/20 text-primary-foreground shadow-card ring-1 ring-inset ring-primary-foreground/30"
-                    : "text-primary-foreground/75 hover:bg-primary-foreground/15 hover:text-primary-foreground hover:shadow-card"
+                    : "text-primary-foreground/95 hover:bg-primary-foreground/15 hover:text-primary-foreground hover:shadow-card"
                 )}
               >
                 <Icon className="h-4 w-4" />
@@ -72,12 +72,13 @@ export function SiteNav() {
             );
           })}
           </nav>
-          <div className="flex items-center gap-2.5 rounded-lg bg-primary-foreground/15 px-3 py-2 shadow-card ring-1 ring-inset ring-primary-foreground/25 transition-smooth hover:bg-primary-foreground/20">
-            <UserRound className="h-4 w-4 shrink-0 text-primary-foreground/80" />
+          <div className="flex items-center gap-2.5 rounded-lg bg-primary px-3 py-2 shadow-card ring-1 ring-inset ring-primary-foreground/40">
+            <UserRound className="h-4 w-4 shrink-0 text-primary-foreground" />
             <Select
               value={currentUser.id}
               onChange={(e) => setCurrentUserId(e.target.value)}
-              className="h-8 w-[240px] border-transparent bg-transparent text-primary-foreground shadow-none hover:border-primary-foreground/30 focus-visible:ring-primary-foreground/50 [&>option]:text-foreground"
+              aria-label="当前账号"
+              className="h-8 w-[240px] border-transparent bg-transparent font-semibold text-primary-foreground shadow-none hover:border-primary-foreground/50 focus-visible:ring-primary-foreground [&>option]:bg-card [&>option]:text-foreground"
             >
               {selectableUsers.map((u) => (
                 <option key={u.id} value={u.id}>

@@ -19,30 +19,30 @@
     --secondary: 214 32% 92%;
     --secondary-foreground: 215 36% 22%;
     --muted: 216 28% 94%;
-    --muted-foreground: 215 18% 48%;
+    --muted-foreground: 215 18% 40%;
     --accent: 214 38% 90%;
     --accent-foreground: 215 36% 22%;
 
-    /* Informational - 更鲜艳的蓝色 */
-    --info: 210 82% 48%;
-    --info-foreground: 0 0% 100%;
+    /* Status foregrounds are used on pale surfaces; solid fills use white text. */
+    --info: 210 82% 36%;
+    --info-foreground: 210 82% 28%;
     --info-surface: 209 78% 95%;
     --info-border: 209 58% 82%;
 
-    /* Positive - 更鲜明的绿色 */
-    --success: 160 72% 38%;
-    --success-foreground: 0 0% 100%;
+    /* Positive */
+    --success: 160 72% 26%;
+    --success-foreground: 160 72% 20%;
     --success-surface: 156 62% 94%;
     --success-border: 156 42% 80%;
 
-    /* Caution - 更鲜明的橙色 */
-    --warning: 36 92% 52%;
-    --warning-foreground: 0 0% 100%;
+    /* Caution */
+    --warning: 32 90% 28%;
+    --warning-foreground: 32 90% 22%;
     --warning-surface: 42 92% 94%;
     --warning-border: 40 72% 78%;
 
-    /* Negative - 更鲜明的红色 */
-    --destructive: 0 76% 52%;
+    /* Negative */
+    --destructive: 0 70% 40%;
     --destructive-foreground: 0 0% 100%;
     --destructive-surface: 0 82% 96%;
     --destructive-border: 0 62% 84%;
