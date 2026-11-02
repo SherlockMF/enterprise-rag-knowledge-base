@@ -1,6 +1,14 @@
-# DesignBase AI · 企业知识库问答
+# DesignBase RAG｜企业知识库问答与文档审计
 
-面向城市规划与建筑设计院的企业级 RAG 知识库问答平台。支持企业制度 / 行业法规 / 项目资料的智能问答，具备结构化文档解析、混合检索、角色权限隔离、工作流审计与评测治理闭环。
+**Enterprise RAG Knowledge Base** — 基于 Next.js 和 TypeScript 的企业知识库问答项目，支持 PDF / Word 文档解析、表格 RAG、混合检索、引用溯源、权限过滤、文档审计与问答评测。
+
+以城市规划与建筑设计院的规范、标准和项目资料为示例场景，也适合学习企业文档问答（Document QA）与检索增强生成（Retrieval-Augmented Generation）的实现。项目提供模拟账号与 Mock AI，便于本地演示和二次开发；当前不包含生产级身份认证。
+
+An enterprise knowledge base and document question-answering project with table-aware RAG, hybrid search, source citations, role-based filtering, document review, and evaluation workflows. Built with Next.js and TypeScript, with a local mock mode for demos.
+
+[快速开始](#快速开始) · [核心能力](#核心能力) · [产品与技术文档](docs/README.md) · [案例介绍](docs/case-study.md) · [演示脚本](docs/demo-script.md)
+
+仓库：[`SherlockMF/enterprise-rag-knowledge-base`](https://github.com/SherlockMF/enterprise-rag-knowledge-base) · 产品名：**DesignBase RAG**
 
 ## 核心能力
 
@@ -21,8 +29,12 @@
 
 ## 快速开始
 
+准备 Node.js 22.13+ 或 24 与 npm。Python + pdfplumber 用于可选的表格抽取增强；不配置 AI Key 可先体验内置示例。
+
 ```bash
-npm install
+git clone https://github.com/SherlockMF/enterprise-rag-knowledge-base.git
+cd enterprise-rag-knowledge-base
+npm ci
 npm run dev
 ```
 
@@ -37,6 +49,13 @@ npm test                 # 单元测试
 npm run eval:auto-review # 自动审核评测（需配置与 fixture）
 npm run build            # 生产构建
 ```
+
+## 本地运行与部署状态
+
+- 当前以本地运行和代码展示为主，不提供已验证的公开在线演示地址。
+- 仓库通过 [`vercel.json`](vercel.json) 关闭 Vercel 的 Git 自动部署；提交代码不会主动启动该集成的自动部署。配置依据见 [Vercel Git Configuration](https://vercel.com/docs/project-configuration/git-configuration#turning-off-all-automatic-deployments)。
+- 文档、切片、向量与评测数据会写入本地 `.data/`。请保留数据目录；多实例共享存储、生产鉴权和备份策略需另行实现。
+- Mock 模式用于验证交互与链路，不代表真实模型的回答质量。
 
 ## 页面
 
@@ -149,6 +168,10 @@ Windows PowerShell 如遇执行策略限制，用 `npm.cmd test` 代替 `npm tes
 
 ## 文档
 
+- [`docs/README.md`](docs/README.md) — 产品与技术文档导航
+- [`docs/one-pager.md`](docs/one-pager.md) — 项目定位与适用场景
+- [`docs/case-study.md`](docs/case-study.md) — 企业知识库 RAG 案例介绍
+- [`docs/demo-script.md`](docs/demo-script.md) — 本地演示脚本
 - [`docs/tech-design.md`](docs/tech-design.md) — 技术设计
 - [`docs/PRD.md`](docs/PRD.md) — 产品需求
 - [`docs/superpowers/plans/2026-07-28-evaluation-governance-roadmap.md`](docs/superpowers/plans/2026-07-28-evaluation-governance-roadmap.md) — 评测治理路线图

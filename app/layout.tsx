@@ -4,9 +4,10 @@ import { KnowledgeUserProvider } from "@/components/KnowledgeUserProvider";
 import { RootRouteShell } from "@/components/RootRouteShell";
 
 export const metadata: Metadata = {
-  title: "规划设计院企业知识库",
+  title: "DesignBase RAG｜企业知识库问答与文档审计",
   description:
-    "面向城市规划与建筑设计院的企业知识库：支持通用知识、行业标准与项目资料权限问答。",
+    "基于 Next.js 与 TypeScript 的企业知识库 RAG 问答项目，支持 PDF / Word 解析、表格检索、引用溯源、权限过滤、文档审计与问答评测。",
+  keywords: ["企业知识库", "RAG", "文档问答", "PDF", "表格检索", "知识库问答", "enterprise knowledge base", "document QA", "DesignBase RAG"],
 };
 
 export default function RootLayout({

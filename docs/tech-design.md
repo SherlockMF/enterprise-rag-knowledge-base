@@ -1,4 +1,4 @@
-# 技术方案｜企业知识库问答系统
+# 技术方案｜DesignBase RAG 企业知识库
 
 > 阶段 4（技术设计）· 架构 / 选型 / 数据模型 / 检索算法 / 接口 / 部署
 > 最后更新：2026-06-21 ｜ 关联：[PRD](./PRD.md) · [原型与流程](./prototype.md)
@@ -27,7 +27,7 @@
 │   parse/    文本提取·IR·表格识别 (调用 Python 边车)               │
 │   knowledge/ 权限·导航·无权处理                                  │
 │   ai/       LLMProvider · EmbeddingProvider (可替换/可mock)      │
-│   db/       chunks/documents 存取 (当前内存 + mockData)          │
+│   db/       内存索引 + .data 文件持久化 + mockData               │
 └───────────────┬─────────────────────────┬───────────────────────┘
                 │ 进程外调用                │ HTTP (OpenAI 兼容)
         ┌───────▼────────┐        ┌────────▼─────────┐
@@ -43,7 +43,7 @@
 | 接口层 | `app/api/` | 请求校验、调用业务层、返回 JSON |
 | 业务层 | `lib/rag`、`lib/parse`、`lib/knowledge` | RAG 链路、解析流水线、权限 |
 | 能力层 | `lib/ai` | LLM / Embedding 抽象，真实/ mock 双实现 |
-| 数据层 | `lib/db` | Chunk / Document 存取（当前内存态） |
+| 数据层 | `lib/db` | Chunk / Document 存取（内存索引 + 本地文件持久化） |
 
 ---
 
@@ -51,7 +51,7 @@
 
 | 维度 | 选型 | 理由 |
 | --- | --- | --- |
-| 框架 | Next.js 14 (App Router) | 前后端一体、Route Handler 即 API、部署简单（Zeabur 等） |
+| 框架 | Next.js 14 (App Router) | 前后端一体、Route Handler 即 API，支持本地 Node.js 运行 |
 | 语言 | TypeScript 5.6 | 全链路类型安全，`lib/types.ts` 为单一事实源 |
 | UI | Tailwind + Radix UI | 无障碍基础组件 + 原子化样式，`components/ui/` 封装 |
 | PDF 文本 | pdfjs-dist | 纯 JS，可在 Node 端跑，取文本与坐标 |
@@ -159,10 +159,11 @@ interface EmbeddingProvider {
 | `ZHIPU_API_KEY` 等 | 接入真实智谱 GLM（OpenAI 兼容） |
 | `OCR_SCANNED=1` | 开启 Tesseract OCR（扫描件文字，默认关） |
 | `VISION_SCANNED=1` | 开启 GLM-4V 视觉识别（复杂扫描表格，需 Key，默认关） |
-| `DEVELOPER_TOOLS_ENABLED` | `navigation.ts` 内常量，当前 `false`（隐藏开发工具） |
-| 端口 | dev `next dev -p 3100`；生产 `next start`（start 脚本用 `PORT` 环境变量兼容 Zeabur） |
+| 开发工具入口 | `canUseDeveloperTools` 按角色判断，管理员与开发人员可见 |
+| 端口 | 开发 `npm run dev` 使用 3100；构建后 `npm start` 使用 Next.js 默认端口，可用 `PORT` 环境变量指定 |
+| Vercel | `vercel.json` 设置 `git.deploymentEnabled: false`，关闭 Git 自动部署 |
 
-依赖：Node（Next.js 运行时）+ Python（pdfplumber 边车，表格抽取）。Python 缺失则表格降级。
+运行入口与克隆命令见[项目 README](../README.md)。依赖 Node.js 22.13+ 或 24；Python（pdfplumber 边车）用于表格抽取增强，缺失则降级。当前以本地运行和代码展示为主。
 
 ---
 
@@ -170,9 +171,10 @@ interface EmbeddingProvider {
 
 | 手段 | 命令 | 现状 |
 | --- | --- | --- |
-| 单元测试 | `npm test`（node --experimental-strip-types） | 74 例全过 |
-| 类型检查 | `npx tsc --noEmit` | 无错误 |
-| 构建验证 | `npm run build` | 15 路由全过 |
+| 单元测试 | `npm test`（node --experimental-strip-types） | 结果与数量以当前运行输出为准 |
+| 类型检查 | `npx tsc --noEmit` | 校验当前代码的类型约束 |
+| 构建验证 | `npm run build` | 编译、类型检查与路由生成 |
+| 代码检查 | `npm run lint` | 使用 Next.js ESLint 配置 |
 | 表格对比 | `npm run compare:tables` | 坐标表抽取回归 |
 | 真实 PDF 评测 | `npm run eval:real-pdfs` | 真实样本评测 |
 
@@ -183,9 +185,9 @@ interface EmbeddingProvider {
 ## 9. 已知技术债 / 风险
 | 编号 | 项 | 影响 | 建议 |
 | --- | --- | --- | --- |
-| TD-1 | 无持久化（内存 + mockData） | 重启丢数据，不可上生产 | 接 DB（文档/Chunk/向量） |
+| TD-1 | 本地文件持久化 | 依赖持久磁盘，不支持多实例共享数据库 | 接 DB（文档/Chunk/向量）并规划备份 |
 | TD-2 | 模拟账号，无真实鉴权 | 仅演示 | 接企业 SSO / 鉴权中间件 |
-| TD-3 | ESLint 未配置（`npm run lint` 卡交互） | CI 无法 lint | 加 `.eslintrc.json: next/core-web-vitals` |
+| TD-3 | 缺少自动代码检查流水线 | 已配置 ESLint，但仍需手动运行 | 将 `npm run lint` 纳入后续 CI |
 | TD-4 | 无 CI 门禁 | 回归靠手动三件套 | GitHub Actions: lint+test+build |
 | TD-5 | Python 边车硬依赖 | 缺失则表格降级 | 部署文档明确依赖 / 容器内置 |
 | TD-6 | 向量维度耦合提供方 | 换 embedding 需重建向量 | 入库记录 signature，换源时提示重解析 |

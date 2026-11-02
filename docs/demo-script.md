@@ -1,4 +1,4 @@
-# DesignBase AI 面试 Demo 脚本
+# DesignBase RAG 面试 Demo 脚本
 ## 准备
 
 1. 启动本地服务。
