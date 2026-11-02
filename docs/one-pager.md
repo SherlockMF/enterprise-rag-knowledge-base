@@ -1,4 +1,4 @@
-# One-Pager｜DesignBase RAG 企业知识库
+# One-Pager｜企业知识库 RAG
 
 > 立项一页纸 · 阶段 0（概念）
 > 最后更新：2026-06-21 ｜ 关联：[PRD](./PRD.md)
@@ -6,7 +6,7 @@
 ---
 
 ## 一句话
-DesignBase RAG 是一个企业知识库问答与文档审计项目（Enterprise RAG Knowledge Base），以城市规划与建筑设计院资料为示例，帮助用户检索规范条文、项目资料和表格指标，查看引用依据，并演示权限过滤与依据不足拒答。
+企业知识库 RAG 是一个企业知识库问答与文档审计项目（Enterprise RAG Knowledge Base），以城市规划与建筑设计院资料为示例，帮助用户检索规范条文、项目资料和表格指标，查看引用依据，并演示权限过滤与依据不足拒答。
 
 代码仓库：[SherlockMF/enterprise-rag-knowledge-base](https://github.com/SherlockMF/enterprise-rag-knowledge-base)。支持本地 Mock 演示，运行方式见[项目 README](../README.md)。
 

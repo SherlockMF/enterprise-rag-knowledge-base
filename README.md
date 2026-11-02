@@ -1,4 +1,4 @@
-# DesignBase RAG｜企业知识库问答与文档审计
+# 企业知识库 RAG｜文档问答与审计
 
 **Enterprise RAG Knowledge Base** — 基于 Next.js 和 TypeScript 的企业知识库问答项目，支持 PDF / Word 文档解析、表格 RAG、混合检索、引用溯源、权限过滤、文档审计与问答评测。
 
@@ -8,7 +8,7 @@ An enterprise knowledge base and document question-answering project with table-
 
 [快速开始](#快速开始) · [核心能力](#核心能力) · [产品与技术文档](docs/README.md) · [案例介绍](docs/case-study.md) · [演示脚本](docs/demo-script.md)
 
-仓库：[`SherlockMF/enterprise-rag-knowledge-base`](https://github.com/SherlockMF/enterprise-rag-knowledge-base) · 产品名：**DesignBase RAG**
+仓库：[`SherlockMF/enterprise-rag-knowledge-base`](https://github.com/SherlockMF/enterprise-rag-knowledge-base) · 产品名：**企业知识库 RAG**
 
 ## 核心能力
 

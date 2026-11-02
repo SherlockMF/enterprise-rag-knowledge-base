@@ -1,6 +1,6 @@
-# DesignBase RAG｜企业知识库产品与技术文档
+# 企业知识库 RAG｜产品与技术文档
 
-本目录介绍 **DesignBase RAG（Enterprise RAG Knowledge Base）**：以规划设计行业资料为示例的企业知识库问答与文档审计项目。
+本目录介绍 **企业知识库 RAG（Enterprise RAG Knowledge Base）**：以规划设计行业资料为示例的企业知识库问答与文档审计项目。
 
 仓库：[SherlockMF/enterprise-rag-knowledge-base](https://github.com/SherlockMF/enterprise-rag-knowledge-base) · [本地启动与功能总览](../README.md)
 

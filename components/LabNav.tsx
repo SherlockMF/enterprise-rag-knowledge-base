@@ -40,7 +40,7 @@ export function LabNav() {
           <Link href="/lab" className="flex items-center gap-2">
             <FlaskConical className="h-5 w-5" />
             <span className="text-sm font-semibold tracking-tight md:text-base">
-              DesignBase RAG 测试台
+              企业知识库 RAG 测试台
             </span>
           </Link>
           <Link

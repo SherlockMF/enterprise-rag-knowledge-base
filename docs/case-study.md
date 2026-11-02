@@ -1,7 +1,7 @@
-# DesignBase RAG Case Study
+# Enterprise RAG Knowledge Base — Case Study
 ## 一句话定位
 
-DesignBase RAG 是面向规划/建筑设计院项目组的可信 RAG 知识工作台，帮助项目成员用自然语言查询项目资料、规范表格和成果要求，并通过权限前置、引用追溯和依据不足拒答降低 AI 编造风险。
+企业知识库 RAG 是面向规划/建筑设计院项目组的可信 RAG 知识工作台，帮助项目成员用自然语言查询项目资料、规范表格和成果要求，并通过权限前置、引用追溯和依据不足拒答降低 AI 编造风险。
 
 ## 目标用户
 

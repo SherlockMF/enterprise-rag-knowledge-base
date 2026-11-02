@@ -1,4 +1,4 @@
-# DesignBase RAG 面试 Demo 脚本
+# 企业知识库 RAG 面试 Demo 脚本
 ## 准备
 
 1. 启动本地服务。

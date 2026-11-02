@@ -44,7 +44,7 @@ export function SiteNav() {
             <Scale className="h-5 w-5" />
           </span>
           <span className="text-base font-bold tracking-tight md:text-lg">
-            DesignBase RAG
+            企业知识库 RAG
           </span>
         </Link>
         <div className="flex flex-col gap-2 md:flex-row md:items-center">
