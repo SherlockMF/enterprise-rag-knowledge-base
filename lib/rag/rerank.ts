@@ -114,7 +114,15 @@ export function rerank(
     if (totalPhraseW > 0) {
       let matchedW = 0;
       for (const p of phrases) if (hay.includes(p.text)) matchedW += phraseIdf.get(p.text) ?? 0;
-      const PHRASE_FOCUS_REF = 180;
+      // focus 衰减：稀有短语若只是在长段落里被「顺带提到一次」，证据力弱；
+      // 在短小的条文/表行/定义里出现才是强证据。按 chunk 正文长度衰减，避免
+      // 800+ 字的无关长段因一次提及稀有词而霸榜。
+      // 结构化知识单元（表行/指标项/条款/定义）本身就是「主键+枚举」的答案载体，
+      // 200~400 字属于正常长度（如用地对应关系行的整行枚举），不应按长段折半衰减，
+      // 只有 plain_section 长段落才用 180 的严格基准。
+      const isStructuredUnit =
+        !!c.objectType && c.objectType !== "plain_section";
+      const PHRASE_FOCUS_REF = isStructuredUnit ? 420 : 180;
       const focus = Math.min(1, PHRASE_FOCUS_REF / Math.max(c.content.length, PHRASE_FOCUS_REF));
       score += WEIGHTS.phrase * (matchedW / totalPhraseW) * focus;
 
@@ -129,11 +137,20 @@ export function rerank(
     }
 
     // 精确主键命中：问题字面包含该行/项的 rowKey、code 或别名（长度≥3，避免短词误命中）。
+    // 行字段值同样算主键：合并单元格表格里真正的行主键常落在 列2/列3 等子列
+    // （如"产业用地"行的 rowKey 是外层分类"城乡建设用地"，而"产业用地"在 fields 里）。
     const exactKeys = [c.rowKey, c.code, ...(c.aliases ?? [])].filter(
       (k): k is string => !!k && k.length >= 3
     );
     if (exactKeys.some((k) => ctx.question.includes(k))) {
       score += WEIGHTS.exactKey;
+    } else {
+      const fieldValues = Object.values(c.fields ?? {}).filter(
+        (v): v is string => !!v && v.length >= 3 && v.length <= 30
+      );
+      if (fieldValues.some((v) => ctx.question.includes(v))) {
+        score += WEIGHTS.exactKey;
+      }
     }
 
     // 城市匹配（归一化："北京"="北京市"）
@@ -187,6 +204,14 @@ function queryIntentScore(
   if (signals.asksDefinition && chunk.chunkType === "definition") score += 1;
   if (signals.asksIndicator && (chunk.chunkType === "indicator" || objectType === "indicator_item")) score += 1;
   if (signals.asksConfiguration && /indicator|requirement|structured_table_row/.test(objectType)) score += 0.8;
+  // 组成/包含类问题：答案载体是「主键+枚举子项」的表格行/指标项/定义。
+  if (
+    signals.asksComposition &&
+    (["table_row", "indicator", "definition", "code"].includes(chunk.chunkType) ||
+      /structured_table_row|indicator_item|definition|classification_code/.test(objectType))
+  ) {
+    score += 0.9;
+  }
   if (signals.asksObligation && /requirement|regulation_clause/.test(objectType)) score += 0.9;
   if (signals.asksDeliverable && /deliverable_requirement|drawing_requirement/.test(objectType)) score += 1;
   if (signals.asksDrawing && objectType === "drawing_requirement") score += 1;

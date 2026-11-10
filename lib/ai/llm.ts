@@ -224,7 +224,10 @@ ${context}
       body: JSON.stringify({
         model: this.model,
         temperature: 0.1,
-        max_tokens: 512,
+        max_tokens: 1024,
+        // 结论生成是确定性抽取任务：GLM-4.5 默认思维链与正文共享 max_tokens，
+        // 上下文一长推理就把配额吃光，正文在几十字处被硬切（finish_reason=length）。
+        thinking: { type: "disabled" },
         messages: [
           { role: "system", content: SYSTEM_PROMPT },
           { role: "user", content: user },

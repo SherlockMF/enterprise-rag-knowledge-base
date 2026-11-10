@@ -266,10 +266,8 @@ const STRONG_NAME_HEADER = /(名称|设施|术语|代码|对象|项目)/;
 const WEAK_NAME_HEADER = /(指标|类别|用地|分类|管控)/;
 const NUMERIC_ONLY = /^[\d\s\-—–./%()（）]+$/;
 
-/**
- * 行主键：优先取「名称型列」的值（设施名称/指标名称/类别/代码…），
- * 否则取首个非纯数字单元格，再否则取首个非空单元格。
- */
+/** 行主键：优先取「名称型列」的值（设施名称/指标名称/类别/代码…），
+ *  否则取首个非纯数字单元格，再否则取首个非空单元格。 */
 export function rowKeyOf(row: string[], headers?: string[]): string {
   if (headers && headers.length) {
     for (const re of [STRONG_NAME_HEADER, WEAK_NAME_HEADER]) {
@@ -288,6 +286,111 @@ export function rowKeyOf(row: string[], headers?: string[]): string {
     if (t) return t;
   }
   return "";
+}
+
+// ============================================================================
+// 行主键（第一性原理）：主键 = 在兄弟行中区分度最高的名义值。
+// ----------------------------------------------------------------------------
+// 单看一行无法区分「这一行的身份」和「它所属的分组」——合并单元格的外层
+// 类别（如"城乡建设用地"）在行内看起来和行键一模一样。判据必须来自表级：
+// 同一值跨多行重复 ⇒ 它是分组/分类，不是其中某一行的身份。因此行主键的
+// 计算需要整张表的值分布统计，而不是逐行独立决策。
+// ============================================================================
+
+/** 表级值分布统计：每列 → 单元格值 → 该值出现的原始行数。 */
+export interface RowKeyStats {
+  rowCount: number;
+  valueRowCount: Array<Map<string, number>>;
+}
+
+export function buildRowKeyStats(rows: string[][]): RowKeyStats {
+  const valueRowCount: Array<Map<string, number>> = [];
+  for (const row of rows) {
+    (row ?? []).forEach((cell, i) => {
+      const v = (cell ?? "").trim();
+      if (!v) return;
+      (valueRowCount[i] ??= new Map()).set(v, (valueRowCount[i].get(v) ?? 0) + 1);
+    });
+  }
+  return { rowCount: rows.length, valueRowCount };
+}
+
+/** 名义值：短、非纯数字、非枚举散文——枚举长串是内容列，不是身份。 */
+function isNominalCell(v: string): boolean {
+  if (!v || NUMERIC_ONLY.test(v)) return false;
+  if (v.length > 30) return false;
+  if (/[。；;]/.test(v)) return false; // 句读 = 说明散文
+  if ((v.match(/、/g) ?? []).length >= 2) return false;
+  return true;
+}
+
+export interface RowKeyResult {
+  rowKey: string;
+  /** 被降级的分组值（合并单元格的外层类别）；仍作为别名保留检索入口。 */
+  groupKeys: string[];
+}
+
+/** 表格结构词：任何情况下都不该是某一行的身份。 */
+const STRUCTURAL_LABEL =
+  /^(其中|合计|小计|总计|共计|序号|备注|其他|其它|指标|说明|内容|名称|代码)$/;
+
+/** 档位型值：汉字+数字混合的规格区间（"岁6以下""1200-1500平方米""18班"）或
+ *  字母档位（"A类""B级"）。行间差异的档位，不是实体名，只在兜底作主键。
+ *  注意：字母开头的编码（A1/F81/B23）是用地代码=行身份，不算档位；
+ *  纯数字/区间（1200-1500）由 NUMERIC_ONLY 排除，两字中文词（托幼）是主体。 */
+const isTierLike = (v: string): boolean =>
+  (/\d/.test(v) && /[一-龥]/.test(v)) || /^[A-Za-z][类级档次]{1,2}$/.test(v);
+
+/**
+ * 带表级统计的行主键。与 rowKeyOf 的区别：
+ *  - 跨多行重复的名称值（覆盖率 ≥ 1/3）判定为分组值，不作为该行主键，
+ *    而是降级进 groupKeys（别名），让"外层分类"和"行身份"都可被检索；
+ *  - 降级的前提是存在「非档位型」的唯一身份值（无数字、非结构词的名词值）。
+ *    没有时（如"托幼"按办学规模拆多行），重复名称就是行主体，保持为键——
+ *    分组值和重复主体的判据来自"其余列有没有像身份的值"，而非重复本身；
+ *  - stats 缺省时所有值视为唯一，退化为 rowKeyOf 的表头优先规则。
+ */
+export function rowKeyOfWithStats(
+  row: string[],
+  headers: string[] | undefined,
+  stats?: RowKeyStats
+): RowKeyResult {
+  const cells = row.map((c) => (c ?? "").trim());
+  const n = Math.max(1, stats?.rowCount ?? 1);
+  const coverageOf = (i: number, v: string): number =>
+    stats?.valueRowCount[i]?.get(v) ?? 1;
+  // 覆盖率 > 1/3 且重复 ≥2 行 ⇒ 合并单元格式分组。
+  const isGrouping = (i: number, v: string): boolean => {
+    const cov = coverageOf(i, v);
+    return cov > 1 && cov / n > 1 / 3;
+  };
+  const headerScore = (i: number): number => {
+    const h = headers?.[i] ?? "";
+    if (STRONG_NAME_HEADER.test(h)) return 2;
+    if (WEAK_NAME_HEADER.test(h)) return 1.2;
+    return 0.4;
+  };
+
+  const groupKeys = new Set<string>();
+  const candidates: Array<{ v: string; i: number; score: number }> = [];
+  for (let i = 0; i < cells.length; i++) {
+    const v = cells[i];
+    if (!isNominalCell(v) || STRUCTURAL_LABEL.test(v)) continue;
+    if (isTierLike(v)) continue; // 档位值只在兜底（rowKeyOf）里作主键
+    if (isGrouping(i, v)) {
+      // 仅名称型列的分组值值得留作别名（"列2""其中"这类结构垃圾不要）。
+      if (headerScore(i) > 1) groupKeys.add(v);
+      continue;
+    }
+    const specificity = 1 - (coverageOf(i, v) - 1) / n;
+    const leftness = cells.length > 1 ? (cells.length - i) / cells.length : 1;
+    candidates.push({ v, i, score: headerScore(i) + 2 * specificity + 0.6 * leftness });
+  }
+  candidates.sort((a, b) => b.score - a.score || a.i - b.i);
+  // 兜底：没有唯一身份值（全分组/全档位）时退回旧的优先级规则。
+  const rowKey = candidates[0]?.v ?? rowKeyOf(cells, headers);
+  const groupList = [...groupKeys].filter((k) => k !== rowKey).slice(0, 3);
+  return { rowKey, groupKeys: groupList };
 }
 
 /** 行 → 字段 JSON（列名→单元格值，跳过空）。 */

@@ -9,7 +9,7 @@ import {
   stableObjectId,
 } from "../objects.ts";
 import type { SectionTree } from "../sectionTree";
-import { rowKeyOf } from "../tableModel.ts";
+import { buildRowKeyStats, rowKeyOfWithStats } from "../tableModel.ts";
 import { classifyTable } from "./classifyTable.ts";
 import { flattenHeaders } from "./flattenHeaders.ts";
 import { mergeContinuationTables } from "./mergeTables.ts";
@@ -40,6 +40,9 @@ export function buildStructuredTableObjects(
 
     const rowObjects: StructuredTableRowObject[] = [];
     let logicalRowIndex = 0;
+    // 表级值分布统计：行主键的「分组值 vs 行身份」判据来自兄弟行的重复情况，
+    // 必须在逐行计算前建好（按原始行统计，展开的分档逻辑行不重复计数）。
+    const rowKeyStats = buildRowKeyStats(merged.model.rows);
     for (let sourceRowIndex = 0; sourceRowIndex < merged.model.rows.length; sourceRowIndex++) {
       const row = merged.model.rows[sourceRowIndex];
       const baseFields: Record<string, string> = {};
@@ -49,9 +52,10 @@ export function buildStructuredTableObjects(
       });
       const expanded = expandScaleTierInRowFields(baseFields);
       for (const fields of expanded.rows) {
-        const rowKey = rowKeyOf(
+        const { rowKey, groupKeys } = rowKeyOfWithStats(
           headers.map((header) => fields[header.name] ?? ""),
-          headers.map((h) => h.name)
+          headers.map((h) => h.name),
+          rowKeyStats
         );
         const warnings = [
           ...(classification.confidence < 0.55 ? ["low_confidence_table_row"] : []),
@@ -85,8 +89,8 @@ export function buildStructuredTableObjects(
           rowKey,
           fields,
           normalizedFields: normalizeFields(fields),
-          keywords: [rowKey, tableNo, tableTitle].filter(Boolean) as string[],
-          aliases: [rowKey].filter(Boolean) as string[],
+          keywords: [rowKey, ...groupKeys, tableNo, tableTitle].filter(Boolean) as string[],
+          aliases: [rowKey, ...groupKeys].filter(Boolean) as string[],
           confidence: classification.confidence,
           warnings: warnings.length ? warnings : undefined,
           raw: row,

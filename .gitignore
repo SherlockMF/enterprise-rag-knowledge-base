@@ -10,6 +10,7 @@
 npm-debug.log*
 .env*.local
 .vercel
+/.netlify/
 *.tsbuildinfo
 next-env.d.ts
 
@@ -29,7 +30,16 @@ next-env.d.ts
 
 # dev server log
 .dev.log
+.dev-*.log
+.dev-*.out.log
+.dev-*.err.log
 .env
+
+# 本地运行产物与备份（不入库）
+/.data-backups/
+/output/
+/.playwright-cli/
+/_devlog.txt
 
 # Claude Code 本地配置
 .claude/

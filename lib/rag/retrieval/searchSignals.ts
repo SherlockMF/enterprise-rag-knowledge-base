@@ -5,6 +5,8 @@ export interface QuerySignals {
   asksDefinition: boolean;
   asksIndicator: boolean;
   asksConfiguration: boolean;
+  /** 组成/包含类问题（"产业用地包含什么用地"）：答案通常是枚举若干子项的表格行。 */
+  asksComposition: boolean;
   asksDeliverable: boolean;
   asksDrawing: boolean;
   asksAttachmentOrDatabase: boolean;
@@ -49,6 +51,7 @@ export function analyzeQuery(query: string): QuerySignals {
     asksDefinition: /定义|是什么|是指|所称|术语|含义/.test(q),
     asksIndicator: /指标|面积|数量|规模|服务半径|容积率|绿地率|密度|高度|多少/.test(q),
     asksConfiguration: /配置|配建|设置|标准|控制要求/.test(q),
+    asksComposition: /包含|包括|组成|构成|涵盖|含哪|都有什么|都有哪些/.test(q),
     asksDeliverable: /成果|提交|编制内容|包括哪些/.test(q),
     asksDrawing: /图纸|图则|图纸目录|比例尺/.test(q),
     asksAttachmentOrDatabase: /附件|附表|数据库|材料/.test(q),
@@ -66,6 +69,9 @@ export function topKForQuerySignals(signals: QuerySignals): number {
   }
   if (signals.asksTableNo) return 20;
   if (signals.asksIndicator) return 12;
+  // 组成/包含类问题的答案往往分散在同一张表的相邻行（如"产业用地"行+"其中"子行），
+  // 多留名额，避免被同义的短定义块挤出候选。
+  if (signals.asksComposition) return 12;
   if (signals.asksObligation || signals.asksConfiguration) return 10;
   if (signals.asksClause) return 8;
   if (signals.asksCode || signals.asksDefinition) return 5;

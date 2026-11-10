@@ -20,7 +20,12 @@ import type {
 } from "@/lib/types";
 import type { KnowledgeObject } from "@/lib/rag/objects";
 import { detectHeading } from "./headings.ts";
-import { expandRow, rowFields, rowKeyOf } from "./tableModel.ts";
+import {
+  buildRowKeyStats,
+  expandRow,
+  rowFields,
+  rowKeyOfWithStats,
+} from "./tableModel.ts";
 import { cleanBlocks } from "./clean.ts";
 import { buildDocProfile } from "./profile.ts";
 import { buildSectionTree, type SectionTree } from "./sectionTree.ts";
@@ -128,18 +133,32 @@ export function chunkBlocks(
         aliases: model.title ? [model.title] : [],
       });
 
-      // 紧随的 table_row 块
+      // 紧随的 table_row 块：先收集整组行，用表级值分布统计算行主键
+      // （跨行重复的合并单元格值是分组，不是行身份，见 rowKeyOfWithStats）。
+      const rowBlocks: Block[] = [];
       let j = i + 1;
       while (j < cleaned.length && cleaned[j].type === "table_row") {
-        const rowBlk = cleaned[j];
+        rowBlocks.push(cleaned[j]);
+        j++;
+      }
+      const rowKeyStats = buildRowKeyStats(
+        rowBlocks.map((rowBlk) => (rowBlk.rowCells ?? []) as string[])
+      );
+      for (const rowBlk of rowBlocks) {
         const row = rowBlk.rowCells ?? [];
-        const key = rowKeyOf(row, model.headers);
+        const { rowKey: key, groupKeys } = rowKeyOfWithStats(
+          row,
+          model.headers,
+          rowKeyStats
+        );
         const content = expandRow(model, row, sectionPath);
         const codeMatch = key.match(CODE_RE);
         const fields = rowFields(model.headers, row);
-        const aliases = [key, ...(codeMatch ? [codeMatch[0]] : [])].filter(
-          Boolean
-        );
+        const aliases = [
+          key,
+          ...groupKeys,
+          ...(codeMatch ? [codeMatch[0]] : []),
+        ].filter(Boolean);
         drafts.push({
           ...base(rowBlk.pageStart, rowBlk.pageEnd),
           id: newId(),
@@ -156,7 +175,6 @@ export function chunkBlocks(
           keywords: extractKeywords(content),
           aliases,
         });
-        j++;
       }
       i = j;
       continue;

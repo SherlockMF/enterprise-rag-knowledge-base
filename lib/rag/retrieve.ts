@@ -219,8 +219,12 @@ export async function retrieve(
   // 在 chunk 全集上查父块（table_full / 同序列），浅拷贝注入 content。
   recorder?.start("context_expansion");
   const byId = new Map(chunks.map((c) => [c.id, c]));
+  // Top-K 截断前先做近重复去重：同一事实常同时存在 indicator/table_row/deliverable
+  // 多份孪生 chunk（如"绿隔产业用地"的定义行），不去重会成对挤占 Top-K 名额，
+  // 把真正回答问题的异文档证据截在门外。
+  const dedupedTop = dedupeNearDuplicate(reranked.slice(0, topK * 3));
   const topSeed = expandServiceScaleSiblingRows(
-    reranked.slice(0, topK),
+    dedupedTop.slice(0, topK),
     chunks,
     question
   );
@@ -343,6 +347,31 @@ function limitContextBudget(results: RetrievedChunk[], maxChars: number): Retrie
     used += len;
   }
   return kept;
+}
+
+/**
+ * 近重复去重：按规范化内容判断互为子串（同一事实的 indicator/table_row/deliverable
+ * 孪生块，后者往往只多了表头前缀）。只在前 topK*3 名内做，代价可忽略；
+ * 顺序保持 rerank 排序，重复时保留排名靠前的一份。
+ */
+function dedupeNearDuplicate(results: RetrievedChunk[]): RetrievedChunk[] {
+  const norm = (t: string) =>
+    (t || "").replace(/[，。、；：,.:;|【】()[\]（）\s]/g, "");
+  const kept: { result: RetrievedChunk; key: string }[] = [];
+  for (const result of results) {
+    const key = norm(result.chunk.content);
+    if (!key) {
+      kept.push({ result, key });
+      continue;
+    }
+    const isDup = kept.some(({ key: prev }) => {
+      // 超短内容（<12 字）只在完全相等时判重，避免误伤同表相邻短行。
+      if (prev.length < 12 && key.length < 12) return prev === key;
+      return prev.includes(key) || key.includes(prev);
+    });
+    if (!isDup) kept.push({ result, key });
+  }
+  return kept.map((k) => k.result);
 }
 
 export { topKForQuerySignals } from "./retrieval/searchSignals.ts";
