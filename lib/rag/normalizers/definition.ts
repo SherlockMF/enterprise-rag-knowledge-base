@@ -5,7 +5,7 @@ import { blockIdAt, getSectionPathForBlock, type SectionTree } from "../sectionT
 
 const DEFINITION_HEADING_RE = /(术语|名词解释|定义|用词说明|统计口径)/;
 const DEFINITION_RE =
-  /^(?:本(?:标准|办法|规定|指南|导则)所称)?\s*([^，。：:\s]{2,30})\s*(?:是指|指|是|包括|：|:)(.+)$/;
+  /^(?:本(?:标准|办法|规定|指南|导则)所称)?\s*([^，。：:\s]{2,30}?)\s*(?:是指|系指|包括|：|:)(.+)$/;
 const ALIAS_RE = /以下简称[“"]?([^”"]+)[”"]?/;
 
 export function extractDefinitionObjects(
