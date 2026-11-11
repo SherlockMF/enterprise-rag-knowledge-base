@@ -43,3 +43,6 @@ next-env.d.ts
 
 # Claude Code 本地配置
 .claude/
+
+# 会话工具本地目录
+/.superpowers/
