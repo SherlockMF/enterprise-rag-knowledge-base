@@ -78,7 +78,7 @@ function aggregateScaleTierConclusion(
   const serviceScale = citations
     .map(extractUsefulStructuredLines)
     .flat()
-    .find((line) => /^服务规模：/.test(line));
+    .find(nonEmptyServiceScaleLine);
 
   const joined = joinAsConclusion(
     [...meta, ...unique, serviceScale].filter(Boolean) as string[]
@@ -151,7 +151,7 @@ function aggregateServiceScaleConclusion(
 
   const rows = citations
     .map(extractUsefulStructuredLines)
-    .filter((lines) => lines.some((line) => /^服务规模：/.test(line)));
+    .filter((lines) => lines.some(nonEmptyServiceScaleLine));
   if (rows.length <= 1) return null;
 
   const firstMeta = rows[0].filter((line) =>
@@ -161,7 +161,7 @@ function aggregateServiceScaleConclusion(
     const discriminator = lines.find((line) =>
       /办学规模|一般规模|规模性指标/.test(line)
     );
-    const serviceScale = lines.find((line) => /^服务规模：/.test(line));
+    const serviceScale = lines.find(nonEmptyServiceScaleLine);
     return serviceScale
       ? [{
           text: [discriminator, serviceScale].filter(Boolean).join("，"),
@@ -174,6 +174,15 @@ function aggregateServiceScaleConclusion(
   const uniqueRows = [...new Set(rowItems.map((item) => item.text))];
   if (uniqueRows.length <= 1) return null;
   return joinAsConclusion([...firstMeta, ...uniqueRows]);
+}
+
+/** 服务规模字段的"占位空值"（"—"）：字段存在但没有值，不是答案。 */
+export function isEmptyServiceScaleLine(line: string): boolean {
+  return /^服务规模：\s*[—–-]?\s*$/.test(line.trim());
+}
+
+function nonEmptyServiceScaleLine(line: string): boolean {
+  return /^服务规模：/.test(line.trim()) && !isEmptyServiceScaleLine(line);
 }
 
 function isSingleCategorizedServiceScaleRow(
@@ -398,7 +407,13 @@ function structuredEvidenceQuestionScore(lines: string[], question: string): num
   }
   if (/一般/.test(q) && /一般规模/.test(text)) score += 4;
   if (asksThousandIndicator && /千人指标/.test(text)) score += 8;
-  if (asksServiceScale && /服务规模/.test(text)) score += 8;
+  if (asksServiceScale) {
+    if (/服务规模/.test(text)) score += 8;
+    // 问服务规模时，字段是"—"占位空值的行不是答案，强降权。
+    if (isEmptyServiceScaleLine(text.trim().split(/\r?\n/).find(isEmptyServiceScaleLine) ?? "")) {
+      score -= 10;
+    }
+  }
   if (/15分钟|步行|可达|85%|比例|使用说明/.test(q) && /详细配置要求|指标使用说明/.test(text)) {
     score += 4;
   }
