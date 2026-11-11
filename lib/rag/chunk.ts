@@ -58,6 +58,69 @@ const HARD_MAX = 1200; // 绝对上限
 const OVERLAP = 100; // 相邻正文 chunk 重叠（80–120 取中）
 const MIN_CHUNK = 30;
 
+// ============================================================================
+// 入库近重复去重
+// ----------------------------------------------------------------------------
+// 同一事实常被多个抽取器各生成一份 chunk（indicator/structured_table_row/
+// deliverable_requirement…，实测占语料 ~30%）。冗余块浪费向量存储、稀释
+// BM25，还会在检索时成对挤占 Top-K。这里在入库前按「规范化内容互为子串」
+// 去重，按类型优先级保留元数据最结构化的一份；table_full 整表不参与
+// （行内容与整表 markdown 渲染不同，且行才是答案单元，不可被整表吸收）。
+// ============================================================================
+
+const DEDUPE_TYPE_PRIORITY = [
+  "code",
+  "table_row",
+  "indicator",
+  "definition",
+  "clause",
+  "requirement",
+  "list_item",
+  "deliverable",
+  "procedure",
+  "note",
+];
+
+const DEDUPE_SKIP_TYPES = new Set(["table_full"]);
+
+export function dedupeChunkDrafts<T extends { chunkType: string; content: string }>(
+  drafts: T[]
+): T[] {
+  if (drafts.length <= 1) return drafts;
+  const norm = (t: string) =>
+    (t || "").replace(/[，。、；：,.:;|【】()[\]（）\s]/g, "");
+  const priority = (t: string) => {
+    const i = DEDUPE_TYPE_PRIORITY.indexOf(t);
+    return i === -1 ? DEDUPE_TYPE_PRIORITY.length : i;
+  };
+  const order = drafts
+    .map((draft, index) => ({ draft, index }))
+    .sort(
+      (a, b) =>
+        priority(a.draft.chunkType) - priority(b.draft.chunkType) || a.index - b.index
+    );
+  const kept: { draft: T; key: string; index: number }[] = [];
+  for (const { draft, index } of order) {
+    if (DEDUPE_SKIP_TYPES.has(draft.chunkType)) {
+      kept.push({ draft, key: norm(draft.content), index });
+      continue;
+    }
+    const key = norm(draft.content);
+    if (!key) {
+      kept.push({ draft, key, index });
+      continue;
+    }
+    const isDup = kept.some(({ key: prev, draft: prevDraft }) => {
+      if (DEDUPE_SKIP_TYPES.has(prevDraft.chunkType)) return false;
+      // 超短内容只在完全相等时判重，避免误伤同表相邻短行。
+      if (prev.length < 12 && key.length < 12) return prev === key;
+      return prev.includes(key) || key.includes(prev);
+    });
+    if (!isDup) kept.push({ draft, key, index });
+  }
+  return kept.sort((a, b) => a.index - b.index).map((k) => k.draft);
+}
+
 const DEFINITION_HEADING_RE = /(术语|名词解释|定义|用词说明|统计口径)/;
 const DELIVERABLE_RE = /(成果|图纸|附表|附件|清单|数据库|提交材料|申报材料)/;
 const PROCEDURE_RE = /(流程|程序|阶段|步骤|路径|时序|机制|审批|报审|审查)/;
@@ -523,7 +586,7 @@ export function buildChunksWithObjects(
     );
     if (objectDrafts.length) {
       return {
-        drafts: objectDrafts,
+        drafts: dedupeChunkDrafts(objectDrafts),
         blocks,
         cleanedBlocks: cleaned,
         profile,
@@ -540,7 +603,7 @@ export function buildChunksWithObjects(
   }
 
   return {
-    drafts: chunkBlocks(doc, blocks, profile),
+    drafts: dedupeChunkDrafts(chunkBlocks(doc, blocks, profile)),
     blocks,
     cleanedBlocks: cleaned,
     profile,
@@ -557,8 +620,7 @@ export function buildRetrievalChunksFromObjects(
   objects: KnowledgeObject[],
   profile: DocProfile,
   versionInfo?: SourceVersionInfo
-): DraftChunk[] {
-  const drafts: DraftChunk[] = [];
+): DraftChunk[] {  const drafts: DraftChunk[] = [];
   for (const obj of objects) {
     if (obj.objectType === "structured_table") {
       drafts.push(makeObjectDraft(doc, obj, profile, versionInfo, {

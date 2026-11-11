@@ -387,8 +387,14 @@ export function rowKeyOfWithStats(
     candidates.push({ v, i, score: headerScore(i) + 2 * specificity + 0.6 * leftness });
   }
   candidates.sort((a, b) => b.score - a.score || a.i - b.i);
-  // 兜底：没有唯一身份值（全分组/全档位）时退回旧的优先级规则。
-  const rowKey = candidates[0]?.v ?? rowKeyOf(cells, headers);
+  // 兜底：没有唯一身份值（全分组/全档位）时退回旧的优先级规则，
+  // 但结构词（合计/其中/序号…）在任何情况下都不该成为行身份。
+  const fallbackCells = cells.filter((v) => !STRUCTURAL_LABEL.test(v));
+  const rowKey =
+    candidates[0]?.v ??
+    (fallbackCells.length
+      ? rowKeyOf(fallbackCells, headers?.filter((_, i) => !STRUCTURAL_LABEL.test(cells[i] ?? "")))
+      : rowKeyOf(cells, headers));
   const groupList = [...groupKeys].filter((k) => k !== rowKey).slice(0, 3);
   return { rowKey, groupKeys: groupList };
 }

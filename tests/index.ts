@@ -78,3 +78,4 @@ import "./tableReprocessApi.test.ts";
 import "./workflowPresentation.test.ts";
 import "./routeShell.test.ts";
 import "./documentParser.test.ts";
+import "./tableRowKey.test.ts";

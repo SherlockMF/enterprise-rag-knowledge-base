@@ -157,7 +157,7 @@ function computePageParams(rawItems: any[]): {
 
 /** 常见背景水印文本模式（政府/企业文档）。 */
 const WATERMARK_PATTERNS =
-  /^(机密|内部使用|草案|仅供内部|验收|DRAFT|CONFIDENTIAL|PROPRIETARY|FOR INTERNAL USE|公章|防伪|已失效|样本|示意|非正式|试用版)$/i;
+  /^(机密|内部使用|草案|仅供内部|验收|DRAFT|CONFIDENTIAL|PROPRIETARY|FOR INTERNAL USE|公章|防伪|已失效|样本|示意|非正式|试用版|北京市规划和自然资源局|北京市规划和自然资源委员会|北京市规划和国土资源管理委员会)$/i;
 
 /**
  * 判断一个 PDF text item 是否为水印/背景印章。

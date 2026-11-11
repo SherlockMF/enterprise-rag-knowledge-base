@@ -78,10 +78,15 @@ export function queryPhrases(question: string): QueryPhrase[] {
   for (const m of question.matchAll(/第[一二三四五六七八九十百零0-9]+条/g)) add(m[0]);
 
   // 3) 去虚词后的最大中文片段
-  let s = question;
-  for (const b of PHRASE_BREAKERS) s = s.split(b).join(" ");
-  s = s.replace(/[^一-龥]+/g, " ");
-  for (const run of s.split(/\s+/)) add(run);
+  for (const run of segmentHanziText(question)) add(run);
 
   return [...out.entries()].map(([text, len]) => ({ text, len }));
+}
+
+/** 按虚词/疑问词把中文切分成语义段（查询侧分词共用，避免 2-gram 跨词噪声）。 */
+export function segmentHanziText(text: string): string[] {
+  let s = text;
+  for (const b of PHRASE_BREAKERS) s = s.split(b).join(" ");
+  s = s.replace(/[^一-龥]+/g, " ");
+  return s.split(/\s+/).filter(Boolean);
 }

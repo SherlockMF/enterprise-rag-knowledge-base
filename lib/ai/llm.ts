@@ -213,7 +213,8 @@ export class ZhipuLLMProvider implements LLMProvider {
 可用知识库片段：
 ${context}
 
-请仅依据以上片段，用1-3句话直接给出结论。不要输出"抱歉"，不要重复依据格式。`;
+请仅依据以上片段，用1-3句话直接给出结论。不要输出"抱歉"，不要重复依据格式。
+注意：多个片段可能相关度相近，先比较哪一段最完整、最直接地回答了问题（例如"X包含什么"应优先取枚举了全部子项的表格行，而非只定义某个子类的短条目），以该段为主要依据作答。`;
 
     const res = await fetch(this.url, {
       method: "POST",

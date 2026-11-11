@@ -16,6 +16,9 @@ export const GOLDEN_QUESTIONS: GoldenQuestion[] = [
   { query: "社区服务站的配置指标是多少？", expectedObjectTypes: ["indicator_item"], expectedKeywords: ["社区服务站", "指标"] },
   { query: "居住社区级需要哪些事项？", expectedObjectTypes: ["indicator_item", "checklist_item"], expectedKeywords: ["居住社区级"] },
   { query: "表1 中 A1 和 A11 两行是什么？", expectedObjectTypes: ["structured_table_row"], expectedKeywords: ["表1", "A1", "A11"] },
+  // 组成/包含类问题：答案载体是「主键+枚举子项」的表格行/指标项（2026-11 产业用地案例）。
+  { query: "产业用地包含什么用地？", expectedObjectTypes: ["structured_table_row", "indicator_item"], expectedKeywords: ["产业用地"] },
+  { query: "配置指标包括哪些项目？", expectedObjectTypes: ["indicator_item", "structured_table_row"], expectedKeywords: ["配置指标"] },
   { query: "哪些设施必须配置，哪些不得减少？", expectedObjectTypes: ["requirement"], expectedKeywords: ["必须", "不得"] },
   { query: "成果包含哪些内容？", expectedObjectTypes: ["deliverable_requirement"], expectedKeywords: ["成果"] },
   { query: "图纸要求是什么？", expectedObjectTypes: ["drawing_requirement"], expectedKeywords: ["图纸"] },

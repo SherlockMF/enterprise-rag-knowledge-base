@@ -7,6 +7,7 @@ import { cosineSimilarity, getEmbeddingProvider } from "@/lib/ai/embedding";
 import { listSearchableChunksByAccess } from "@/lib/db/chunks";
 import { rerank } from "./rerank";
 import { BM25Index, tokenize } from "./bm25";
+import { segmentHanziText } from "./patterns.ts";
 import { expandHit } from "./expand";
 import { exactSearchChunks } from "./retrieval/exactIndex.ts";
 import { analyzeQuery, topKForQuerySignals } from "./retrieval/searchSignals.ts";
@@ -46,10 +47,13 @@ export function extractQueryKeywords(question: string): string[] {
   ];
   for (const term of TERMS) if (q.includes(term)) keywords.add(term);
 
-  // 兜底 2-gram
+  // 兜底 2-gram：先按虚词/疑问词切成语义段，再在段内取 2-gram——
+  // 避免"产业用地包含"被滑窗切成"地包""含什""么用"这类跨词垃圾参与打分。
+  // 整段（≤4 字）同时作为整词保留。
   const han = q.match(/[一-龥]+/g) ?? [];
-  for (const seg of han) {
-    for (let i = 0; i < seg.length - 1; i++) keywords.add(seg.slice(i, i + 2));
+  for (const piece of segmentHanziText(han.join(""))) {
+    if (piece.length <= 4) keywords.add(piece);
+    for (let i = 0; i < piece.length - 1; i++) keywords.add(piece.slice(i, i + 2));
   }
 
   return [...keywords];

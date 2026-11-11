@@ -229,9 +229,11 @@ function versionPriority(versionInfo: RetrievedChunk["chunk"]["versionInfo"]): n
   const statusScore: Record<string, number> = {
     current: 1,
     reference: 0.7,
+    // internal 只是分发范围标记（"[内部资料，注意保存]"），不代表失效，
+    // 不应比 reference 低——否则自有内部标准会被公开国标系统性压过。
     unknown: 0.55,
+    internal: 0.7,
     possibly_superseded: 0.35,
-    internal: 0.45,
     draft: 0.35,
     superseded: 0.05,
   };
