@@ -52,10 +52,13 @@ npm run build            # 生产构建
 
 ## 本地运行与部署状态
 
-- 当前以本地运行和代码展示为主，不提供已验证的公开在线演示地址。
+- Netlify 演示站点：[企业知识库 RAG](https://lomivex-ask.netlify.app)。使用内置示例资料、模拟账号与 Mock AI，不加载本地上传资料或 AI 密钥。
+- 计划使用 `ask.lomivex.top`：DNS CNAME 已指向 `lomivex-ask.netlify.app`；截至 2026-11-08，Netlify 账户的每小时域名修改额度已用完，平台绑定与 HTTPS 验证尚待完成。
+- [`netlify.toml`](netlify.toml) 配置 `npm run build`、`.next-build` 和 Netlify Next.js Runtime。发布时应从不含 `.env.local`、`.data/`、备份与调试文件的独立目录构建，避免携带本地密钥或私有资料。
 - 仓库通过 [`vercel.json`](vercel.json) 关闭 Vercel 的 Git 自动部署；提交代码不会主动启动该集成的自动部署。配置依据见 [Vercel Git Configuration](https://vercel.com/docs/project-configuration/git-configuration#turning-off-all-automatic-deployments)。
 - 文档、切片、向量与评测数据会写入本地 `.data/`。请保留数据目录；多实例共享存储、生产鉴权和备份策略需另行实现。
 - Mock 模式用于验证交互与链路，不代表真实模型的回答质量。
+- Netlify 演示不提供持久化存储；上传资料、审计记录和评测批次的完整写入流程仍需在本地环境体验。
 
 ## 页面
 
